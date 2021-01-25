@@ -1,8 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request
+from flask_restful import Resource, Api
 import json
 
+from habilidades import ListaHabilidades, Habilidades
 
 app = Flask(__name__)
+api = Api(app)
 
 devs = [
     {'id': '0',
@@ -21,9 +24,8 @@ devs = [
 ]
 
 
-@app.route('/devs/<int:id>/', methods=['GET', 'PUT', 'DELETE'])
-def desenvolvedor(id):
-    if request.method == 'GET':
+class Desenvolvedor(Resource):
+    def get(self, id):
         try:
             response = devs[id]
         except IndexError:
@@ -32,27 +34,37 @@ def desenvolvedor(id):
         except Exception:
             mensagem = 'Erro desconhecido. Procure o administrador do serviço que tentou acessar.'
             response = {'status': 'Erro', 'mensagem': mensagem}
-        return jsonify(response)
-    elif request.method == 'PUT':
+        return response
+
+    def put(self, id):
         dados = json.loads(request.data)
         devs[id] = dados
-        return jsonify(dados)
-    elif request.method == 'DELETE':
+        return dados
+
+    def post(self):
+        pass
+
+    def delete(self, id):
         devs.pop(id)
-        return jsonify({'status': 'Sucesso!', 'mensagem': 'Registro excluido!'})
+        return {'status': 'Sucesso!', 'mensagem': 'Registro excluido!'}
 
 
-@app.route('/devs/', methods=['POST', 'GET'])
-def lista_desenvolvedores():
-    if request.method == 'POST':
+class ListaDesenvolvedores(Resource):
+    def get(self):
+        return devs
+
+    def post(self):
         dados = json.loads(request.data)
         posicao = len(devs)
         dados['id'] = posicao
         devs.append(dados)
-        return jsonify(devs[posicao])
-    elif request.method == 'GET':
-        return jsonify(devs)
+        return devs[posicao]
 
+
+api.add_resource(Desenvolvedor, '/devs/<int:id>/')
+api.add_resource(ListaDesenvolvedores, '/devs/')
+api.add_resource(ListaHabilidades, '/habilidades/')
+api.add_resource(Habilidades, '/habilidades/<int:id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
